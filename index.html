@@ -554,7 +554,6 @@ function setTab(t){
   $('#tabLocal').setAttribute('aria-selected', String(t==='local'));
   $('#paneOnline').hidden = t!=='online';
   $('#paneLocal').hidden = t!=='local';
-  store.set('shigen-tab', t);
 }
 $('#tabOnline').addEventListener('click', ()=>setTab('online'));
 $('#tabLocal').addEventListener('click', ()=>setTab('local'));
@@ -1207,7 +1206,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-// start-up: invited link or remembered tab
+// Start on CPU play unless this is an online room invitation.
 const invitedCode = (new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 if(invitedCode.length===4 && Online.enabled){
   setTab('online');
@@ -1216,7 +1215,7 @@ if(invitedCode.length===4 && Online.enabled){
   inv.textContent = `部屋「${invitedCode}」に招待されています。名前を入れて「参加」を押してください。`;
   setTimeout(()=>{ ($('#onName').value ? $('#joinBtn') : $('#onName')).focus(); }, 100);
 } else {
-  setTab(Online.enabled ? store.get('shigen-tab','online') : 'local');
+  setTab('local');
 }
 })();
 </script>
