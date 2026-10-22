@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>四元ブラフ</title>
-<meta name="description" content="火・水・土・風を同時に出し合い、かぶったら0点。CPUと遊べる5秒の読み合いカードゲーム。">
+<meta name="description" content="火・水・土・風のカードを同時に出し合い、かぶったら0点。5秒で決める読み合いカードゲーム。オンラインで2〜4人対戦、CPU戦も。">
 <meta name="theme-color" content="#1a1322">
 <!-- ▼ 公開したら下の2か所の URL を自分のものに書き換えてください（README 手順4） -->
 <meta property="og:url" content="https://amano-kiyoyuki.github.io/shigen-bluff/">
@@ -382,7 +382,7 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
         <p class="tip">全員の残り手札は公開されています。「あの人はもう火がない」を読めるかが勝負。キーボードの 1〜4 でも出せます。</p>
       </div>
       <div class="box">
-        <div class="tabs" role="tablist" hidden>
+        <div class="tabs" role="tablist">
           <button type="button" role="tab" id="tabOnline" aria-selected="true">オンライン対戦</button>
           <button type="button" role="tab" id="tabLocal" aria-selected="false">CPUと遊ぶ</button>
         </div>
@@ -466,7 +466,13 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
 
 <div class="overlay" id="endOv" hidden><div class="panel" id="endPanel"></div></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script src="spark-protocol.js"></script>
+<script src="spark-client.js"></script>
+<script src="firebase-config.js"></script>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -552,7 +558,6 @@ function setTab(t){
 }
 $('#tabOnline').addEventListener('click', ()=>setTab('online'));
 $('#tabLocal').addEventListener('click', ()=>setTab('local'));
-setTab('local');
 
 /* ---------- local setup ---------- */
 const legacySeats = store.get('shigen-seats', null);
@@ -985,17 +990,25 @@ function toast(t){
    ===================================================================== */
 const Online = (() => {
   const cfg=window.FIREBASE_CONFIG||{},P=SparkProtocol;
-  const enabled=!!(window.firebase&&window.crypto?.subtle&&cfg.onlineEnabled&&cfg.apiKey&&cfg.databaseURL);
-  let ready=null,client=null,db=null,uid=null,room=null,code=null,offTime=null,offset=0,connected=false;
+  const loopback=['localhost','127.0.0.1'].includes(location.hostname);
+  const emulatorMode=!!(loopback&&cfg.emulatorEnabled&&new URLSearchParams(location.search).get('emulator')==='1');
+  const enabled=!!(window.firebase&&window.crypto?.subtle&&(cfg.onlineEnabled||emulatorMode)&&cfg.apiKey&&cfg.databaseURL);
+  let ready=null,client=null,app=null,auth=null,db=null,uid=null,room=null,code=null,offTime=null,offset=0,connected=false;
+  let authEmulatorConfigured=false,dbEmulatorConfigured=false,appCheckConfigured=false;
   let generation=0,version=0,tickId=0,painting=false,dirty=false,lastProjection='',lastFrame='',opening=false,starting=false,sending=false;
   const now=()=>Date.now()+offset;
   function init(){
     if(ready)return ready;
     ready=(async()=>{
       if(!enabled)throw new Error('online-disabled');
-      const app=firebase.apps.length?firebase.app():firebase.initializeApp(cfg);
-      if(cfg.appCheckSiteKey)app.appCheck().activate(cfg.appCheckSiteKey,true);
-      uid=(await app.auth().signInAnonymously()).user.uid;db=app.database();
+      const appConfig=emulatorMode?{...cfg,apiKey:'demo-api-key',projectId:'demo-shigen-bluff',databaseURL:'https://demo-shigen-bluff-default-rtdb.firebaseio.com'}:cfg;
+      if(!app)app=firebase.apps.length?firebase.app():firebase.initializeApp(appConfig);
+      if(!auth)auth=app.auth();
+      if(emulatorMode&&!authEmulatorConfigured){auth.useEmulator('http://127.0.0.1:9099');authEmulatorConfigured=true;}
+      else if(!emulatorMode&&cfg.appCheckSiteKey&&!appCheckConfigured){app.appCheck().activate(cfg.appCheckSiteKey,true);appCheckConfigured=true;}
+      uid=(await auth.signInAnonymously()).user.uid;
+      if(!db)db=app.database();
+      if(emulatorMode&&!dbEmulatorConfigured){db.useEmulator('127.0.0.1',9000);dbEmulatorConfigured=true;}
       await db.ref('.info/serverTimeOffset').once('value').then(s=>{offset=s.val()||0;});
       db.ref('.info/serverTimeOffset').on('value',s=>{offset=s.val()||0;});
       client=new SparkClient({db,uid,clock:now,timestamp:firebase.database.ServerValue.TIMESTAMP});
@@ -1016,7 +1029,8 @@ const Online = (() => {
     const epoch=generation;
     client.watch(value=>{if(epoch!==generation)return;room=value;version++;if(value)tick();else renderAbort({status:'expired'});},()=>{if(epoch===generation)renderAbort({reason:'部屋への接続を確認できません。部屋コードから参加し直してください'});});
     await client.connected().catch(()=>{});
-    history.replaceState(null,'',`${location.pathname}?room=${code}`);
+    const url=new URL(location.href);url.searchParams.set('room',code);
+    history.replaceState(null,'',`${url.pathname}${url.search}${url.hash}`);
     clearInterval(tickId);tickId=setInterval(tick,250);await tick();
   }
   const create=()=>connect('create');
@@ -1025,7 +1039,8 @@ const Online = (() => {
   async function leave(){
     generation++;clearInterval(tickId);const old=room;
     code=null;room=null;lastProjection='';lastFrame='';clearAll();G=null;showView('setup');setTab('online');$('#endOv').hidden=true;
-    history.replaceState(null,'',location.pathname);$('#invited').hidden=true;
+    const url=new URL(location.href);url.searchParams.delete('room');
+    history.replaceState(null,'',`${url.pathname}${url.search}${url.hash}`);$('#invited').hidden=true;
     if(client)await client.leave(old);
     if(db)db.goOffline();
   }
@@ -1040,7 +1055,8 @@ const Online = (() => {
   function renderRoom(){
     if(!room)return;showView('room');clearAll();G=null;
     const ps=players();$('#roomCode').textContent=code;$('#roomKind').textContent=room.meta.public?'ランダムマッチ':'友達の部屋';
-    const invite=SITE_URL+'?room='+code;$('#copyBtn').dataset.url=invite;
+    const inviteUrl=emulatorMode?new URL(location.href):new URL(SITE_URL);
+    inviteUrl.searchParams.set('room',code);const invite=inviteUrl.href;$('#copyBtn').dataset.url=invite;
     $('#xInvite').href=xUrl(`四元ブラフの対戦相手を募集中！ 部屋コード「${code}」 #四元ブラフ`,invite);
     $('#plist').innerHTML=ps.map((p,i)=>`<li><i class="dot" style="background:${SEAT_COLORS[i]}"></i><b>${esc(p.name)}</b>${p.uid===uid?'<span class="tag">あなた</span>':''}${room.presence?.[p.uid]===false?'<span class="tag">通信待機</span>':''}</li>`).join('');
     $('#cpuRow').hidden=true;$('#roomStart').hidden=false;$('#roomStart').disabled=ps.length<2||!connected;$('#roomStart').textContent='開始';
