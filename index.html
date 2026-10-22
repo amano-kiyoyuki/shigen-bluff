@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>四元ブラフ</title>
-<meta name="description" content="火・水・土・風の相性を読み合う2人対戦カードゲーム。CPUと遊べます。">
+<meta name="description" content="火・水・土・風の相性を読み合う2人対戦カードゲーム。CPU対戦とオンライン対戦に対応。">
 <meta name="theme-color" content="#1a1322">
 <!-- ▼ 公開したら下の2か所の URL を自分のものに書き換えてください（README 手順4） -->
 <meta property="og:url" content="https://amano-kiyoyuki.github.io/shigen-bluff/">
@@ -419,7 +419,7 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
       </div>
       <div class="box">
         <div class="tabs" role="tablist">
-          <button type="button" role="tab" id="tabOnline" aria-selected="true">オンライン対戦（一時停止中）</button>
+          <button type="button" role="tab" id="tabOnline" aria-selected="true">オンライン対戦</button>
           <button type="button" role="tab" id="tabLocal" aria-selected="false">CPUと遊ぶ</button>
         </div>
 
@@ -435,7 +435,7 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
             <button class="btn ghost" id="joinBtn">参加</button>
           </div>
           <p class="err" id="onErr" role="alert"></p>
-          <p class="cfg-note" id="cfgNote" hidden>オンライン対戦は本番ルールの確認中のため、一時停止しています。CPUと遊ぶことができます。</p>
+          <p class="cfg-note" id="cfgNote" hidden>オンライン対戦に接続できません。CPUと遊ぶことはできます。</p>
         </div>
 
         <div id="paneLocal" hidden>
@@ -1180,7 +1180,7 @@ $('#onName').value = store.get('shigen-name', '');
 $('#onName').addEventListener('input', ()=>store.set('shigen-name', $('#onName').value));
 function errText(e){
   const m = (e && (e.message||e.code)) || '';
-  if(m==='online-disabled') return 'オンライン対戦は本番ルールの確認中のため、一時停止しています';
+  if(m==='online-disabled') return 'オンライン対戦は現在利用できません';
   if(m==='closed'||m==='stale-round') return '受付が終了しました。対戦状態を更新します';
   if(m==='already-picked') return 'カードはすでに確定しています';
   if(m==='resource-exhausted') return '操作が続いたため、少し待ってからお試しください';
