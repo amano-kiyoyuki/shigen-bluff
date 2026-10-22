@@ -30,7 +30,7 @@
       if(this.clock()>=meta.createdAt+P.TTL)throw new Error('expired');
       // Existing members can resume without rewriting their immutable seat.
       try{const room=(await ref.once('value')).val();if(Object.values(room?.slots||{}).some(p=>p?.uid===this.uid)){this.code=code;return {code,room};}}catch(e){if(!/permission/i.test(e.code||e.message))throw e;}
-      for(let slot=0;slot<4;slot++){
+      for(let slot=0;slot<2;slot++){
         try{await ref.child(`slots/${slot}`).set({uid:this.uid,name,joinedAt:this.timestamp});this.code=code;return {code,room:await this.read()};}
         catch(e){if(!/permission/i.test(e.code||e.message))throw e;}
       }
@@ -61,7 +61,7 @@
     async start(){
       const room=await this.read();
       const seats=Object.fromEntries(Object.entries(room.slots||{}).filter(([,p])=>p).map(([k,p])=>[k,{uid:p.uid,name:p.name}]));
-      if(Object.keys(seats).length<2)throw new Error('need-two');
+      if(Object.keys(seats).length!==2)throw new Error('need-two');
       await this.ref().child('match').set({id:P.nonce(16,this.crypto),startAt:this.timestamp,seats});
       await this.db.ref(`sparkV2/lobby/${this.code}`).remove().catch(()=>{});
     }

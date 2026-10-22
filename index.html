@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>四元ブラフ</title>
-<meta name="description" content="火・水・土・風のカードを同時に出し合い、かぶったら0点。5秒で決める読み合いカードゲーム。オンラインで2〜4人対戦、CPU戦も。">
+<meta name="description" content="火・水・土・風の相性を読み合う2人対戦カードゲーム。CPUと遊べます。">
 <meta name="theme-color" content="#1a1322">
 <!-- ▼ 公開したら下の2か所の URL を自分のものに書き換えてください（README 手順4） -->
 <meta property="og:url" content="https://amano-kiyoyuki.github.io/shigen-bluff/">
 <meta property="og:image" content="https://amano-kiyoyuki.github.io/shigen-bluff/ogp.png">
 <!-- ▲ ここまで -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="四元ブラフ ── かぶったら0点">
-<meta property="og:description" content="火・水・土・風を同時に出し合う、5秒の読み合いカードゲーム。ブラウザですぐ遊べます。">
+<meta property="og:title" content="四元ブラフ ── 四すくみを読む2人対戦カードゲーム">
+<meta property="og:description" content="火→水→土→風→火の相性を読み合う、5秒のカードゲーム。相性勝利は15点、同じ記号なら0点。">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -140,6 +140,21 @@ button{font:inherit;color:inherit}
 .ph{display:inline-flex;align-items:center;gap:3px;font-family:var(--f-num);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .ph .sym{width:17px}
 .ph.zero{opacity:.3}
+.cycle-panel{display:grid;grid-template-columns:minmax(0,1fr) 230px;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.cycle-copy b{display:block;color:var(--gold);font-size:14px}
+.cycle-copy p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.cycle-map{display:grid;grid-template-columns:1fr 28px 1fr;grid-template-rows:34px 28px 34px;grid-template-areas:"fire right water" "up . down" "wind left earth";align-items:center;justify-items:center;width:min(100%,230px);margin:auto}
+.cycle-node{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid color-mix(in srgb,var(--c) 45%, transparent);border-radius:9px;background:color-mix(in srgb,var(--c) 10%, var(--felt));color:var(--c);font-size:13px;font-weight:700;white-space:nowrap}
+.cycle-node .sym{width:17px}
+.cycle-fire{grid-area:fire}.cycle-water{grid-area:water}.cycle-earth{grid-area:earth}.cycle-wind{grid-area:wind}
+.cycle-right{grid-area:right}.cycle-down{grid-area:down}.cycle-left{grid-area:left}.cycle-up{grid-area:up}
+.cycle-arrow{color:var(--gold);font-size:23px;font-weight:700;line-height:1}
+.cycle-game{display:flex;justify-content:center;align-items:center;gap:10px;padding:2px 4px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025)}
+.cycle-game .cycle-copy b{font-size:11px}.cycle-game .cycle-copy p{font-size:9px}
+.cycle-map--compact{width:132px;grid-template-columns:1fr 20px 1fr;grid-template-rows:25px 18px 25px}
+.cycle-map--compact .cycle-node{gap:2px;padding:2px 4px;border-radius:7px;font-size:10px}
+.cycle-map--compact .cycle-node .sym{width:12px}
+.cycle-map--compact .cycle-arrow{font-size:16px}
 
 /* table */
 .tablewrap{position:relative;border-radius:22px;background:var(--felt);border:1px solid var(--line);padding:18px 14px 20px;
@@ -243,6 +258,9 @@ button{font:inherit;color:inherit}
 @media (max-width:720px){
   .hero{grid-template-columns:1fr;gap:20px}
   .cols{grid-template-columns:1fr}
+  .cycle-panel{grid-template-columns:1fr;gap:4px}
+  .cycle-copy{text-align:center}
+  .cycle-panel .cycle-map{grid-row:2}
   .board{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pl{padding:8px 10px}
   .pscore{font-size:22px}
@@ -261,6 +279,11 @@ button{font:inherit;color:inherit}
   .app.game-view .pips .lab{font-size:10px;margin-right:2px}
   .app.game-view .pip{width:24px;height:24px;border-radius:6px;font-size:12px}
   .app.game-view .board{gap:5px}
+  .app.game-view .cycle-game{gap:6px;padding:2px}
+  .app.game-view .cycle-map--compact{width:118px;grid-template-columns:1fr 17px 1fr;grid-template-rows:22px 14px 22px}
+  .app.game-view .cycle-map--compact .cycle-node{padding:1px 3px;font-size:9px}
+  .app.game-view .cycle-map--compact .cycle-node .sym{width:10px}
+  .app.game-view .cycle-map--compact .cycle-arrow{font-size:14px}
   .app.game-view .pl{padding:5px 7px;column-gap:6px;row-gap:2px;border-radius:10px}
   .app.game-view .pmeta{font-size:12px}
   .app.game-view .pmeta small{font-size:9px}
@@ -351,7 +374,7 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><h1>四元<b>ブラフ</b></h1><span>火・水・土・風 ── かぶったら0点</span></div>
+    <div class="brand"><h1>四元<b>ブラフ</b></h1><span>火→水→土→風→火 ── 相性を読もう</span></div>
     <div class="top-actions">
       <button id="quitBtn" class="chip-btn" hidden>やめる</button>
       <button id="muteBtn" class="chip-btn" aria-pressed="false">音 ON</button>
@@ -362,8 +385,8 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
   <section id="setup">
     <div class="hero">
       <div>
-        <h2>強いカードほど、<br>みんな出したい。<br>だから<em>かぶる</em>。</h2>
-        <p>5ラウンド、同時に1枚ずつ。他の誰とも違う記号を出せたときだけ得点が入ります。火は80点だけど手札に1枚きり。風は10点だけど4枚ある。5秒で決めてください。</p>
+        <h2>相性を読んで、<br>相手の<em>裏をかこう</em>！</h2>
+        <p>火→水→土→風→火の四すくみ。相性で勝つと15点、同じ記号なら0点、それ以外は両者10点です。2人で全5ラウンド、各記号2枚の手札から5秒以内に1枚を選びます。</p>
       </div>
       <div class="fan" id="fan"></div>
     </div>
@@ -372,18 +395,31 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
       <div class="box">
         <h3>ルール</h3>
         <ul class="rules">
-          <li><span>全<b>5ラウンド</b>。毎ラウンド、全員が手札から1枚を同時に出す</span></li>
-          <li><span>他の誰かと<b>同じ記号</b>だったら、その記号を出した全員が<b>0点</b></span></li>
-          <li><span>得点は 火<b>80</b>・水<b>50</b>・土<b>30</b>・風<b>10</b></span></li>
-          <li><span>手札は10枚（火1・水2・土3・風4）。<b>使うのは5枚だけ</b></span></li>
+          <li><span><b>2人で全5ラウンド</b>。毎ラウンド、手札から1枚を同時に出す</span></li>
+          <li><span>同じ記号なら<b>両者0点</b>。相性で勝つと勝者は<b>15点</b>、相手は0点</span></li>
+          <li><span>火→水→土→風→火の順に強い。それ以外の組み合わせは<b>両者10点</b></span></li>
+          <li><span>通常点は全て<b>10点</b>。相性で勝つと通常点の<b>1.5倍</b></span></li>
+          <li><span>手札は<b>8枚（火・水・土・風が各2枚）</b>。5ラウンドで5枚を使う</span></li>
           <li><span>制限時間は<b>約5秒</b>。時間切れ時は手札から自動で選ぶ</span></li>
           <li><span>5ラウンド後、合計点がいちばん高い人の勝ち</span></li>
         </ul>
-        <p class="tip">全員の残り手札は公開されています。「あの人はもう火がない」を読めるかが勝負。キーボードの 1〜4 でも出せます。</p>
+        <div class="cycle-panel">
+          <div class="cycle-copy">
+            <b>四すくみの相性</b>
+            <p>矢印の先に勝ちます。火→水→土→風→火の順に強く、相性勝利はカード得点が1.5倍です。</p>
+          </div>
+          <div class="cycle-map" role="img" aria-label="火は水に勝ち、水は土に勝ち、土は風に勝ち、風は火に勝つ">
+            <span class="cycle-node cycle-fire el-fire"><i class="sym" aria-hidden="true"></i>火</span><span class="cycle-arrow cycle-right" aria-hidden="true">→</span>
+            <span class="cycle-node cycle-water el-water"><i class="sym" aria-hidden="true"></i>水</span><span class="cycle-arrow cycle-down" aria-hidden="true">↓</span>
+            <span class="cycle-node cycle-earth el-earth"><i class="sym" aria-hidden="true"></i>土</span><span class="cycle-arrow cycle-left" aria-hidden="true">←</span>
+            <span class="cycle-node cycle-wind el-wind"><i class="sym" aria-hidden="true"></i>風</span><span class="cycle-arrow cycle-up" aria-hidden="true">↑</span>
+          </div>
+        </div>
+        <p class="tip">相手の残り手札は公開されています。何を出すか読み合いましょう。キーボードの 1〜4 でも出せます。</p>
       </div>
       <div class="box">
         <div class="tabs" role="tablist">
-          <button type="button" role="tab" id="tabOnline" aria-selected="true">オンライン対戦</button>
+          <button type="button" role="tab" id="tabOnline" aria-selected="true">オンライン対戦（一時停止中）</button>
           <button type="button" role="tab" id="tabLocal" aria-selected="false">CPUと遊ぶ</button>
         </div>
 
@@ -391,7 +427,7 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
           <p class="invited" id="invited" hidden></p>
           <label class="field">あなたの名前<input id="onName" maxlength="10" autocomplete="nickname"></label>
           <button class="btn wide" id="randomBtn">ランダムマッチ</button>
-          <p class="hint">人同士の2〜4人対戦です。1人で遊ぶときは「CPUと遊ぶ」を選んでください。通信切断などでカードを照合できない場合は無効試合になります。</p>
+          <p class="hint">オンラインで2人対戦できます。1人で遊ぶときは「CPUと遊ぶ」を選んでください。通信切断などでカードを照合できない場合は無効試合になります。</p>
           <div class="divider">友達と遊ぶ</div>
           <button class="btn ghost wide" id="createBtn">部屋を作る</button>
           <div class="joinrow">
@@ -399,12 +435,12 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
             <button class="btn ghost" id="joinBtn">参加</button>
           </div>
           <p class="err" id="onErr" role="alert"></p>
-          <p class="cfg-note" id="cfgNote" hidden>オンライン対戦は公開準備中です。CPU対戦は遊べます。</p>
+          <p class="cfg-note" id="cfgNote" hidden>オンライン対戦は本番ルールの確認中のため、一時停止しています。CPUと遊ぶことができます。</p>
         </div>
 
         <div id="paneLocal" hidden>
           <label class="field">あなたの名前<input id="localName" maxlength="10" autocomplete="nickname"></label>
-          <label class="field">プレイ人数<select id="playerCount"><option value="2">2人</option><option value="3">3人</option><option value="4">4人</option></select></label>
+          <p class="hint">プレイ人数：2人（あなたとCPU）</p>
           <button class="btn wide" id="startBtn">ゲーム開始</button>
         </div>
       </div>
@@ -437,6 +473,15 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
       <div class="rail">
         <div class="pips" id="pips"></div>
         <div class="board" id="board"></div>
+        <div class="cycle-game">
+          <div class="cycle-copy"><b>相性</b><p>矢印の先に勝つ<br>勝つと1.5倍</p></div>
+          <div class="cycle-map cycle-map--compact" role="img" aria-label="火は水に勝ち、水は土に勝ち、土は風に勝ち、風は火に勝つ">
+            <span class="cycle-node cycle-fire el-fire"><i class="sym" aria-hidden="true"></i>火</span><span class="cycle-arrow cycle-right" aria-hidden="true">→</span>
+            <span class="cycle-node cycle-water el-water"><i class="sym" aria-hidden="true"></i>水</span><span class="cycle-arrow cycle-down" aria-hidden="true">↓</span>
+            <span class="cycle-node cycle-earth el-earth"><i class="sym" aria-hidden="true"></i>土</span><span class="cycle-arrow cycle-left" aria-hidden="true">←</span>
+            <span class="cycle-node cycle-wind el-wind"><i class="sym" aria-hidden="true"></i>風</span><span class="cycle-arrow cycle-up" aria-hidden="true">↑</span>
+          </div>
+        </div>
       </div>
       <div class="tablewrap">
         <div class="msg" id="msg"></div>
@@ -477,13 +522,13 @@ a.chip-btn{text-decoration:none;display:inline-flex;align-items:center}
 (() => {
 const $ = s => document.querySelector(s);
 const EL = {
-  fire:  {jp:'火', pts:80},
-  water: {jp:'水', pts:50},
-  earth: {jp:'土', pts:30},
+  fire:  {jp:'火', pts:10},
+  water: {jp:'水', pts:10},
+  earth: {jp:'土', pts:10},
   wind:  {jp:'風', pts:10},
 };
 const ORDER = ['fire','water','earth','wind'];
-const START = {fire:1, water:2, earth:3, wind:4};
+const START = {fire:2, water:2, earth:2, wind:2};
 const ROUNDS = 5, LIMIT = 5000;
 const SEAT_COLORS = ['#f3c34f','#ef8fc4','#86c8ff','#b9e07a'];
 const CPU_POOL = [
@@ -554,26 +599,19 @@ function setTab(t){
   $('#tabLocal').setAttribute('aria-selected', String(t==='local'));
   $('#paneOnline').hidden = t!=='online';
   $('#paneLocal').hidden = t!=='local';
+  store.set('shigen-tab', t);
 }
 $('#tabOnline').addEventListener('click', ()=>setTab('online'));
 $('#tabLocal').addEventListener('click', ()=>setTab('local'));
 
 /* ---------- local setup ---------- */
 const legacySeats = store.get('shigen-seats', null);
-const legacyCount = Array.isArray(legacySeats) ? legacySeats.filter(s=>s && s.type!=='none').length : 0;
 let localName = store.get('shigen-local-name', Array.isArray(legacySeats) && legacySeats[0]?.name || 'あなた');
-let playerCount = store.get('shigen-player-count', legacyCount>=2&&legacyCount<=4 ? legacyCount : 2);
-if(![2,3,4].includes(Number(playerCount))) playerCount = 2;
 $('#localName').value = localName;
-$('#playerCount').value = String(playerCount);
 $('#fan').innerHTML = ORDER.map(e=>'<div class="card el-'+e+'">'+cardInner(e)+'<span class="cnt">×'+START[e]+'</span></div>').join('');
 $('#localName').addEventListener('input', ev=>{
   localName = ev.currentTarget.value;
   store.set('shigen-local-name', localName);
-});
-$('#playerCount').addEventListener('change', ev=>{
-  playerCount = Number(ev.currentTarget.value);
-  store.set('shigen-player-count', playerCount);
 });
 
 /* ---------- shared game state / timers ---------- */
@@ -589,17 +627,12 @@ function startLocal(){
   resultAdvance = 0;
   $('#endOv').hidden = true;
   const pool = shuffle(CPU_POOL);
-  const count = Number($('#playerCount').value);
   const playerName = ($('#localName').value||'').trim()||'あなた';
   localName = $('#localName').value;
-  playerCount = count;
   store.set('shigen-local-name', localName);
-  store.set('shigen-player-count', playerCount);
   const players = [{color:SEAT_COLORS[0],hand:{...START},score:0,type:'human',name:playerName}];
-  for(let i=1;i<count;i++){
-    const c = pool[i-1];
-    players.push({color:SEAT_COLORS[i],hand:{...START},score:0,type:'cpu',name:c.name,persona:c.persona,label:c.label});
-  }
+  const c = pool[0];
+  players.push({color:SEAT_COLORS[1],hand:{...START},score:0,type:'cpu',name:c.name,persona:c.persona,label:c.label});
   G = {mode:'local', players, round:0, choices:{}, timed:{}, history:[], phase:'idle', queue:[], current:null,
        hotseat: players.filter(p=>p.type==='human').length>1, placed:new Set()};
   showView('game');
@@ -676,10 +709,10 @@ function toReveal(){
   setMsg('せーの…');
   later(revealLocal, 650);
 }
+function duelPoints(a,b){return SparkProtocol.scoreDuel(a,b);}
 function scoreRound(choices, timed){
-  const counts = {};
-  choices.forEach(e=>{ counts[e] = (counts[e]||0)+1; });
-  return choices.map((e,i)=>({el:e, col:counts[e]>1, pts:counts[e]>1?0:EL[e].pts, timed:!!timed[i]}));
+  const pts = duelPoints(choices[0],choices[1]);
+  return choices.map((e,i)=>({el:e,col:choices[0]===choices[1],pts:pts[i],timed:!!timed[i]}));
 }
 function revealLocal(){
   const rec = scoreRound(G.players.map((p,i)=>G.choices[i]), G.timed);
@@ -736,8 +769,9 @@ function evTable(me, players, distOf){
   const out = {};
   ORDER.forEach(e=>{
     if(me.hand[e]<=0) return;
-    let safe = 1; dists.forEach(d=>{ safe *= 1 - d[e]; });
-    out[e] = {safe, ev:EL[e].pts*safe};
+    const d=dists[0]||{fire:0,water:0,earth:0,wind:0};
+    let ev=0;ORDER.forEach(other=>{ev+=d[other]*duelPoints(e,other)[0];});
+    out[e] = {safe:1-d[e],ev};
   });
   return out;
 }
@@ -762,8 +796,8 @@ function cpuChoose(p, players, round){
   const sc = {};
   for(const k in t){
     const {safe} = t[k]; let v = t[k].ev;
-    if(p.persona==='bold')    v = EL[k].pts*Math.pow(safe,.6);
-    if(p.persona==='careful') v = EL[k].pts*Math.pow(safe,1.6);
+    if(p.persona==='bold')    v *= Math.pow(Math.max(safe,.05),-.2);
+    if(p.persona==='careful') v *= Math.pow(safe,.2);
     if(p.hand[k]===1 && left>2 && k!=='wind') v *= .9;
     sc[k] = v;
   }
@@ -827,19 +861,11 @@ function animateReveal(rec, done){
 }
 
 function commentary(rec){
-  const P = G.players, groups = {};
-  rec.forEach((r,i)=>{ (groups[r.el] = groups[r.el]||[]).push(i); });
-  const clashes = Object.entries(groups).filter(([,a])=>a.length>1);
-  if(rec.every(r=>r.col)) return '<span class="bad">全員かぶり！</span> このラウンドは誰も得点なし';
-  if(!clashes.length){
-    const f = rec.findIndex(r=>r.el==='fire');
-    return f>=0 ? `全員バラバラ！ <span class="hl">${esc(P[f].name)}の火</span>が通った` : '全員バラバラ！ 全員に得点';
-  }
-  const parts = clashes.map(([e,a])=>`<span class="bad">${EL[e].jp}</span>が${a.length===P.length?'全員':a.length+'人'}でかぶり`);
-  const fireWin = rec.findIndex(r=>r.el==='fire' && !r.col);
-  let s = parts.join('、');
-  if(fireWin>=0) s += `。<span class="hl">${esc(P[fireWin].name)}の火</span>は通った`;
-  return s + '！';
+  const P=G.players;
+  if(rec[0].el===rec[1].el)return '<span class="bad">同じ記号！</span> 2人とも0点';
+  const winner=rec.findIndex((r,i)=>r.pts>0&&rec[1-i].pts===0);
+  if(winner>=0)return `<span class="hl">${esc(P[winner].name)}</span>の${EL[rec[winner].el].jp}が相性で勝ち！得点1.5倍`;
+  return '相性の勝敗なし。2人ともカードの点を獲得';
 }
 
 /* ---------- render ---------- */
@@ -969,7 +995,7 @@ function endLocal(){
   showEnd({
     meIdx: humans.length===1 ? humans[0] : null,
     streak,
-    buttons:[{act:'again',label:'もう一度'},{act:'setup',label:'プレイヤー設定へ',ghost:true}],
+    buttons:[{act:'again',label:'もう一度'},{act:'setup',label:'スタート画面へ',ghost:true}],
     on: act => act==='again' ? startLocal() : toSetup(),
   });
 }
@@ -1060,8 +1086,8 @@ const Online = (() => {
     $('#plist').innerHTML=ps.map((p,i)=>`<li><i class="dot" style="background:${SEAT_COLORS[i]}"></i><b>${esc(p.name)}</b>${p.uid===uid?'<span class="tag">あなた</span>':''}${room.presence?.[p.uid]===false?'<span class="tag">通信待機</span>':''}</li>`).join('');
     $('#cpuRow').hidden=true;$('#roomStart').hidden=false;$('#roomStart').disabled=ps.length<2||!connected;$('#roomStart').textContent='開始';
     const autoAt=ps.length>=2?Math.max(...ps.map(p=>p.joinedAt))+15000:null;
-    $('#roomMsg').textContent=!connected?'再接続中…':ps.length<2?'参加者を待っています。オンラインは人同士の2〜4人対戦です':room.meta.public?`あと${Math.max(0,Math.ceil((autoAt-now())/1000))}秒で開始します`:'そろったら、どなたでも「開始」を押せます';
-    if(room.meta.public&&ps.length>=2&&(ps.length===4||now()>=autoAt))start();
+    $('#roomMsg').textContent=!connected?'再接続中…':ps.length<2?'参加者を待っています。オンラインは2人対戦です':room.meta.public?`あと${Math.max(0,Math.ceil((autoAt-now())/1000))}秒で開始します`:'そろったら、どなたでも「開始」を押せます';
+    if(room.meta.public&&ps.length===2&&now()>=autoAt)start();
   }
   function build(view){
     const mySeat=view.seats.findIndex(s=>s.uid===uid);
@@ -1154,7 +1180,7 @@ $('#onName').value = store.get('shigen-name', '');
 $('#onName').addEventListener('input', ()=>store.set('shigen-name', $('#onName').value));
 function errText(e){
   const m = (e && (e.message||e.code)) || '';
-  if(m==='online-disabled') return 'オンライン対戦は公開準備中です';
+  if(m==='online-disabled') return 'オンライン対戦は本番ルールの確認中のため、一時停止しています';
   if(m==='closed'||m==='stale-round') return '受付が終了しました。対戦状態を更新します';
   if(m==='already-picked') return 'カードはすでに確定しています';
   if(m==='resource-exhausted') return '操作が続いたため、少し待ってからお試しください';
@@ -1162,8 +1188,8 @@ function errText(e){
   if(m==='notfound') return 'その部屋は見つかりませんでした。コードを確かめてください';
   if(m==='full-or-started') return '満員か、すでに対戦が始まっています';
   if(m==='expired') return 'この部屋の有効時間が終了しました';
-  if(m==='need-two') return 'オンライン対戦には2人以上必要です';
-  if(m==='full') return 'その部屋は満員です（4人まで）';
+  if(m==='need-two') return 'オンライン対戦には2人必要です';
+  if(m==='full') return 'その部屋は満員です（2人まで）';
   if(/permission|PERMISSION/.test(m)) return '接続が拒否されました。Firebase のルール設定を確認してください';
   if(/auth|admin-restricted|operation-not-allowed/.test(m)) return 'ログインできませんでした。Firebase で「匿名」ログインを有効にしてください';
   return '接続できませんでした。通信状況を確かめて、もう一度試してください';
@@ -1206,7 +1232,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-// Start on CPU play unless this is an online room invitation.
+// start-up: invited link or remembered tab
 const invitedCode = (new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
 if(invitedCode.length===4 && Online.enabled){
   setTab('online');
@@ -1215,7 +1241,7 @@ if(invitedCode.length===4 && Online.enabled){
   inv.textContent = `部屋「${invitedCode}」に招待されています。名前を入れて「参加」を押してください。`;
   setTimeout(()=>{ ($('#onName').value ? $('#joinBtn') : $('#onName')).focus(); }, 100);
 } else {
-  setTab('local');
+  setTab(Online.enabled ? store.get('shigen-tab','online') : 'local');
 }
 })();
 </script>

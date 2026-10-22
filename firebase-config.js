@@ -1,7 +1,7 @@
 // Firebase Web configuration for the public GitHub Pages build.
 // This is public client configuration; database access is protected by RTDB rules.
 window.FIREBASE_CONFIG = {
-  onlineEnabled: true,
+  onlineEnabled: false,
   emulatorEnabled: false,
   apiKey: "AIzaSyDbA-n7u_CTk7lrNfbODPi8StBMl9pVn8Q",
   authDomain: "shigen-bluff.firebaseapp.com",

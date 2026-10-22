@@ -1,6 +1,6 @@
 (function(root){
   'use strict';
-  const ORDER=['fire','water','earth','wind'],START={fire:1,water:2,earth:3,wind:4},POINTS={fire:80,water:50,earth:30,wind:10};
+  const ORDER=['fire','water','earth','wind'],START={fire:2,water:2,earth:2,wind:2},POINTS={fire:10,water:10,earth:10,wind:10};
   const LEAD=1200,CHOOSE=5000,REVEAL=5000,SETTLE=1000,HOLD=5200,STRIDE=CHOOSE+REVEAL+SETTLE+HOLD,TTL=900000;
   const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
   const obj=o=>o&&typeof o==='object';
@@ -9,17 +9,23 @@
   function checkRoom(room){
     if(!obj(room)||!obj(room.meta)||typeof room.meta.owner!=='string'||typeof room.meta.public!=='boolean'||!integer(room.meta.createdAt))return false;
     const slots=room.slots||{};
-    if(Object.keys(slots).some(k=>!['0','1','2','3'].includes(k)))return false;
+    if(Object.keys(slots).some(k=>!['0','1'].includes(k)))return false;
     const list=Object.values(slots).filter(Boolean);
     if(!list.every(p=>typeof p.uid==='string'&&p.uid.length>0&&text(p.name)&&integer(p.joinedAt))||new Set(list.map(p=>p.uid)).size!==list.length)return false;
     if(!room.match)return true;
     const m=room.match;
     if(!/^[a-f0-9]{32}$/.test(m.id)||!integer(m.startAt)||!obj(m.seats))return false;
     const seats=Object.values(m.seats).filter(Boolean);
-    if(seats.length<2||seats.length>4||Object.keys(m.seats).some(k=>!['0','1','2','3'].includes(k)))return false;
+    if(seats.length!==2||Object.keys(m.seats).some(k=>!['0','1'].includes(k)))return false;
     return Object.entries(m.seats).filter(([,p])=>p!=null).every(([k,p])=>typeof p.uid==='string'&&text(p.name)&&slots[k]?.uid===p.uid&&slots[k]?.name===p.name)&&seats.length===list.length;
   }
   const begin=(match,round)=>match.startAt+LEAD+(round-1)*STRIDE;
+  function scoreDuel(a,b){
+    if(a===b)return [0,0];
+    if((a==='fire'&&b==='water')||(a==='water'&&b==='earth')||(a==='earth'&&b==='wind')||(a==='wind'&&b==='fire'))return [Math.round(POINTS[a]*1.5),0];
+    if((b==='fire'&&a==='water')||(b==='water'&&a==='earth')||(b==='earth'&&a==='wind')||(b==='wind'&&a==='fire'))return [0,Math.round(POINTS[b]*1.5)];
+    return [POINTS[a],POINTS[b]];
+  }
   function phase(match,now){
     const elapsed=now-match.startAt-LEAD;
     const round=Math.max(1,Math.min(5,Math.floor(elapsed/STRIDE)+1));
@@ -56,11 +62,13 @@
         if(reason)return {status:'aborted',round:r,reason};
         choices.push(reveal);
       }
-      const rec=choices.map(c=>{const col=choices.filter(x=>x.card===c.card).length>1;return {el:c.card,col,pts:col?0:POINTS[c.card],timed:c.timed};});
+      const a=choices[0].card,b=choices[1].card;
+      const points=scoreDuel(a,b);
+      const rec=choices.map((c,i)=>({el:c.card,col:a===b,pts:points[i],timed:c.timed}));
       rec.forEach((v,i)=>{hands[i][v.el]--;scores[i]+=v.pts;});history.push(rec);
     }
     return {status:state.stage==='end'?'end':'playing',stage:state.stage,round:state.round,gid:m.id,seats,hands,scores,history,rec:history[state.round-1]||null,roundStart:begin(m,state.round),deadline:begin(m,state.round)+CHOOSE,revealAt:begin(m,state.round)+CHOOSE+REVEAL+SETTLE};
   }
-  const api={ORDER,START,POINTS,LEAD,CHOOSE,REVEAL,SETTLE,HOLD,STRIDE,TTL,checkRoom,begin,phase,nonce,commitment,derive,own};
+  const api={ORDER,START,POINTS,LEAD,CHOOSE,REVEAL,SETTLE,HOLD,STRIDE,TTL,checkRoom,begin,phase,nonce,commitment,derive,scoreDuel,own};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.SparkProtocol=api;
 })(typeof globalThis==='object'?globalThis:this);
