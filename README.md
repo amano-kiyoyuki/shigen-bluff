@@ -35,6 +35,7 @@
 | `spark-protocol.js` | カード確定、照合、手札と得点計算 |
 | `spark-client.js` | Firebase接続と秘密値のブラウザー保存 |
 | `firebase-config.js` | Firebase Webアプリの接続設定 |
+| `ogp-2p.png` | 共有リンクのサムネイル画像 |
 | `database.rules.json` | Realtime Databaseのセキュリティルール |
 | `tools/build-rules.cjs` | セキュリティルールの生成元 |
 | `tests/` | ルールと画面の自動テスト |

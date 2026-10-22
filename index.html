@@ -8,12 +8,13 @@
 <meta name="theme-color" content="#1a1322">
 <!-- ▼ 公開したら下の2か所の URL を自分のものに書き換えてください（README 手順4） -->
 <meta property="og:url" content="https://amano-kiyoyuki.github.io/shigen-bluff/">
-<meta property="og:image" content="https://amano-kiyoyuki.github.io/shigen-bluff/ogp.png">
+<meta property="og:image" content="https://amano-kiyoyuki.github.io/shigen-bluff/ogp-2p.png">
 <!-- ▲ ここまで -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="四元ブラフ ── 四すくみを読む2人対戦カードゲーム">
 <meta property="og:description" content="火→水→土→風→火の相性を読み合う、5秒のカードゲーム。相性勝利は15点、同じ記号なら0点。">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://amano-kiyoyuki.github.io/shigen-bluff/ogp-2p.png">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -926,17 +927,18 @@ $('#hand').addEventListener('click', ev=>{
 });
 
 /* ---------- end screen ---------- */
-function shareText(order, meIdx){
+function shareText(meIdx, streak){
   const P = G.players;
-  if(meIdx==null || meIdx<0) return 'かぶったら0点の読み合いカードゲーム「四元ブラフ」 #四元ブラフ';
+  if(meIdx==null || meIdx<0) return '火・水・土・風の相性を読む2人対戦カードゲーム「四元ブラフ」 #四元ブラフ';
   const me = P[meIdx];
-  const rank = 1 + order.filter(x=>x.p.score>me.score).length;
-  const fires = G.history.filter(rec=>rec[meIdx] && rec[meIdx].el==='fire' && !rec[meIdx].col).length;
-  const clashes = G.history.filter(rec=>rec[meIdx] && rec[meIdx].col).length;
-  let line = `四元ブラフで${P.length}人中${rank}位（${me.score}点）！`;
-  if(fires) line += ' 火を通した！';
-  else if(clashes>=3) line += ` ${clashes}回かぶった…`;
-  return `${line}\nかぶったら0点の読み合いカードゲーム #四元ブラフ`;
+  const opponent = P.find((_,i)=>i!==meIdx);
+  if(!opponent) return '火・水・土・風の相性を読む2人対戦カードゲーム「四元ブラフ」 #四元ブラフ';
+  let line;
+  if(me.score>opponent.score) line = `${opponent.name}に${me.score}点で勝利！`;
+  else if(me.score===opponent.score) line = `${opponent.name}と${me.score}点で引き分け！`;
+  else line = `${opponent.name}に${me.score}点で敗北…`;
+  if(me.score>opponent.score && streak?.current>0) line += ` ${streak.current}連勝中！`;
+  return `${line}\n#四元ブラフ`;
 }
 function xUrl(text, url){
   return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}${url?`&url=${encodeURIComponent(url)}`:''}`;
@@ -959,7 +961,7 @@ function showEnd(opts){
       G.history.map(rec=>{ const r = rec[i];
         return `<td><span class="hs el-${r.el} ${r.col?'col':''}" title="${EL[r.el].jp}${r.col?'（かぶり）':''}${r.timed?'・時間切れ':''}">${sym()}${r.col?0:r.pts}${r.timed?'<span class="t">時</span>':''}</span></td>`;
       }).join('')}<td class="tot">${p.score}</td></tr>`).join('')}</tbody></table></div>`;
-  const shareHref = xUrl(shareText(order, opts.meIdx), SITE_URL);
+  const shareHref = xUrl(shareText(opts.meIdx, opts.streak), SITE_URL);
   const streakLine = opts.streak ? '<p class="streak">連勝中：'+opts.streak.current+'勝 / 最高記録：'+opts.streak.best+'勝</p>' : '';
   $('#endPanel').innerHTML = `
     <h2 class="end-title">${title}</h2>
