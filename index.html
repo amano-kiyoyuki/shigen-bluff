@@ -961,7 +961,8 @@ function showEnd(opts){
       G.history.map(rec=>{ const r = rec[i];
         return `<td><span class="hs el-${r.el} ${r.col?'col':''}" title="${EL[r.el].jp}${r.col?'（かぶり）':''}${r.timed?'・時間切れ':''}">${sym()}${r.col?0:r.pts}${r.timed?'<span class="t">時</span>':''}</span></td>`;
       }).join('')}<td class="tot">${p.score}</td></tr>`).join('')}</tbody></table></div>`;
-  const shareHref = xUrl(shareText(opts.meIdx, opts.streak), SITE_URL);
+  const shareUrl = SITE_URL ? `${SITE_URL}?share=2` : '';
+  const shareHref = xUrl(shareText(opts.meIdx, opts.streak), shareUrl);
   const streakLine = opts.streak ? '<p class="streak">連勝中：'+opts.streak.current+'勝 / 最高記録：'+opts.streak.best+'勝</p>' : '';
   $('#endPanel').innerHTML = `
     <h2 class="end-title">${title}</h2>
